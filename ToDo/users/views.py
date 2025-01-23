@@ -15,15 +15,14 @@ def register_view(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
-
-            # Send welcome email
-            subject = 'Welcome to My Website'
-            message = 'Thank you for signing up for our platform.'
-            from_email = 'noreply@example.com'  # Dummy sender email
-            recipient_list = [user.email]  # Use the registered user's email
-            
             try:
-                send_mail(subject, message, from_email, recipient_list)
+                send_mail(
+                    subject='Welcome to My Website',
+                    message='Thank you for signing up for our platform. [user.email]',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
             except Exception as e:
                 print(f"Error sending email: {e}")
 
@@ -41,20 +40,23 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            try:
+                send_mail(
+                    subject='Login Successful',
+                    message='You have successfully logged in to your account. [user.email]',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+            except Exception as e:
+                print(f"Error sending email: {e}")
 
-            # Send login success email to the user
-            login_subject = 'Login Successful'
-            login_message = 'You have successfully logged in to your account.'
-            from_email = settings.DEFAULT_FROM_EMAIL
-            recipient_list = [user.email]
-
-            send_mail(login_subject, login_message, from_email, recipient_list)
-
-            return redirect('home')  # Redirect to home or dashboard after successful login
+            return redirect('home')
     else:
         form = LoginForm()
 
     return render(request, 'login.html', {'form': form})
+
 
 @login_required
 def delete_user(request, user_id):
